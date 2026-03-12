@@ -155,7 +155,7 @@ def plot_arm_statistics(final_q_values: np.ndarray, action_counts: np.ndarray, a
         ax.set_xticklabels(xtick_labels, fontsize=10)
         
         # Titolo ripristinato utilizzando esattamente la funzione originale
-        ax.set_title(get_algorithm_label, fontsize=14, fontweight='bold')
+        ax.set_title(get_algorithm_label(algo), fontsize=14, fontweight='bold')
         
         ax.set_ylabel("Recompensa" if idx % cols == 0 else "")
         
