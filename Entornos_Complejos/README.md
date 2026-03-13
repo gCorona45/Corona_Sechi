@@ -32,8 +32,6 @@ Entornos_Complejos/
 │   ├── tabular_agents.py             # Q-Learning, SARSA, Monte Carlo On/Off-Policy
 │   └── utils.py                      # Utilidades: seed global, limpieza de memoria, make_env
 │
-├── videos/                           # Grabaciones de episodios de los agentes entrenados
-├── requirements.txt                  # Dependencias del proyecto
 └── README.md
 ```
 
