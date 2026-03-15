@@ -4,7 +4,7 @@ import pandas as pd
 from src.utils import get_agent_trajectory
 
 # ==========================================================
-# FUNZIONI DI VISUALIZZAZIONE METODI TABULARI
+# FUNCIONES DE VISUALIZACIÓN MÉTODOS TABULARES
 # ==========================================================
 
 def plot_tabular_results(results_dict):
@@ -93,10 +93,6 @@ def plot_q_values_and_policy(agent, grid_size=8):
             
             plt.arrow(col, row, dx, dy, head_width=0.15, head_length=0.15, color='black', alpha=0.6)
 
-    # Legenda delle azioni
-    #legend_patches = [mpatches.Patch(color='white', label=action_names[i], ec='black') for i in range(4)]
-    #plt.legend(handles=legend_patches, title="Direzioni", bbox_to_anchor=(1.25, 1), loc='upper left')
-
     plt.title(f"Análisis Q-Table: {agent.__class__.__name__}\n Intensidad del color = Valor Q | Frecce = Política Greedy")
     plt.xticks(range(grid_size))
     plt.yticks(range(grid_size))
@@ -141,7 +137,7 @@ def plot_all_paths(all_agents, env_name="SimpleGrid-8x8-v0", grid_size=8):
 
 
 # ==========================================================
-# FUNZIONI DI VISUALIZZAZIONE METODI APPROSSIMAZIONE
+# FUNCIONES DE VISUALIZACIÓN MÉTODOS DE APROXIMACIÓN
 # ==========================================================
 
 
@@ -211,8 +207,6 @@ def plot_epsilon_robustness(results_dict):
     colors = {'DQN': '#1f77b4', 'SARSA': '#ff7f0e'}
     
     for name, stats in results_dict.items():
-        # 'stats' in questo caso è direttamente la lista dei reward restituita da run_experiment
-        # Se run_experiment restituisce (rewards, agent), assicurati di passare solo la lista
         rewards_list = stats if isinstance(stats, list) else stats[0]
         rewards = pd.Series(rewards_list)
         n_episodes = len(rewards)
