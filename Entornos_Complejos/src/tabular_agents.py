@@ -13,14 +13,12 @@ class TabularAgent(Agent):
         self.lr = learning_rate
         self.gamma = gamma
         self.epsilon = epsilon
-        # Q-table inizializzata a zero per ogni stato-azione
         self.q_table = defaultdict(lambda: np.zeros(env.action_space.n)) 
 
     def get_action(self, state):
         if np.random.random() < self.epsilon:
             return self.env.action_space.sample()
 
-        # Invece di np.argmax, scegli casualmente tra i massimi
         q_values = self.q_table[state]
         max_q = np.max(q_values)
         actions_with_max_q = np.where(q_values == max_q)[0]
@@ -41,7 +39,6 @@ class MonteCarloOnPolicyAgent(TabularAgent):
         self.returns_count = defaultdict(lambda: np.ones(env.action_space.n)*5)
 
     def update(self, obs, action, next_obs, reward, terminated, truncated, info):
-        # aggiorna la lista degli episodi con la nuova transizione
         self.episode_memory.append((obs, action, reward)) 
 
     def end_episode(self):
@@ -55,7 +52,6 @@ class MonteCarloOnPolicyAgent(TabularAgent):
                 self.returns_count[state][action] += 1
                 N = self.returns_count[state][action]
                 old_Q = self.q_table[state][action]
-                # Più volte vedi un risultato, più la tua stima di quel risultato diventa solida.
                 self.q_table[state][action] += (1/N) * (G - old_Q)
         self.episode_memory = []
                
@@ -78,17 +74,11 @@ class MonteCarloOffPolicyAgent(TabularAgent):
             G = self.gamma * G + reward
             self.C[state][action] += W
             
-            # Aggiornamento incrementale con Weighted Importance Sampling
+            # Actualización incremental con muestreo por importancia ponderada
             self.q_table[state][action] += (W / self.C[state][action]) * (G - self.q_table[state][action])
-            
-            # Se l'azione presa dalla behavior policy non è quella che avrebbe preso la target (greedy)
-            # la probabilità della target policy diventa 0 e il peso W crolla a 0.
             if action != self.get_target_action(state):
                 break
             
-            # Calcolo probabilità della behavior policy (Epsilon-Greedy)
-            # n_actions = self.env.action_space.n
-            # prob = (1 - self.epsilon) + (self.epsilon / n_actions)
             prob_behavior = (1 - self.epsilon) + (self.epsilon / self.env.action_space.n)
             
             W = W * (1.0 / prob_behavior)
@@ -96,7 +86,6 @@ class MonteCarloOffPolicyAgent(TabularAgent):
         self.episode_memory = []
 
 class SarsaAgent(TabularAgent):
-    # Aggiunto 'info' per matchare la firma della classe base
     def update(self, obs, action, next_obs, next_action, reward, terminated, truncated, info=None):
         done = terminated or truncated
         next_q = 0.0 if done else self.q_table[next_obs][next_action]
