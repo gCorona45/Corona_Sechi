@@ -40,7 +40,6 @@ class SARSASemiGradientAgent(Agent):
         self.last_next_action = None 
 
     def get_action(self, state):
-        # Utilizza epsilon statico
         if random.random() < self.epsilon:
             return self.env.action_space.sample()
         
@@ -49,45 +48,43 @@ class SARSASemiGradientAgent(Agent):
             return self.q_net(state_t).argmax().item()
 
     def update(self, obs, action, next_obs, reward, terminated, truncated, info):
-        # --- 1. REWARD SHAPING AVANZATO ---
+        # --- REWARD SHAPING ---
         adjusted_reward = reward
         
-        # Controlliamo se le informazioni necessarie sono presenti nel dizionario info
+        # Comprobemos si la información necesaria se encuentra en el diccionario info
         if not terminated and "bird" in info and "pipes" in info:
             bird_y = info["bird"]["y"]
             bird_x = info["bird"]["x"]
             pipes = info["pipes"]
             
-            # Trova il primo tubo davanti all'uccellino
+            # Encuentra el primer tubo que hay delante del pajarito
             upcoming_pipes = [p for p in pipes if p["x"] + 50 > bird_x]
             
             if upcoming_pipes:
                 next_pipe = upcoming_pipes[0]
                 
-                target_y = next_pipe["bottom"] - 20 # Resta 20 pixel sopra il tubo di sotto
+                target_y = next_pipe["bottom"] - 20
                 
                 dist_v = abs(bird_y - target_y)
                 
-                # Premiamo la precisione rispetto a questo nuovo target
+                # Priorizamos la precisión en relación con este nuevo objetivo
                 shaping = max(0, 0.5 - (dist_v / 150.0))
                 adjusted_reward += shaping
                         
             #adjusted_reward += 0.1 # Bonus sopravvivenza frame
             
         elif terminated:
-            adjusted_reward = -20.0 # Penalità per collisione
+            adjusted_reward = -20.0 # Penalización por colisión
         
-        
-        # Scegliamo A' basato su epsilon statico
+    
         next_action = self.get_action(next_obs)
         self.last_next_action = next_action 
         
-        # Aggiunta unsqueeze(0) per coerenza con la rete (Batch Size = 1)
         obs_t = torch.FloatTensor(obs).unsqueeze(0).to(device)
         next_obs_t = torch.FloatTensor(next_obs).unsqueeze(0).to(device)
         
         q_values = self.q_net(obs_t)
-        q_value = q_values[0, action] # Accesso indicizzato corretto per (1, action_dim)
+        q_value = q_values[0, action]
         
         with torch.no_grad():
             if terminated:
