@@ -9,7 +9,7 @@ from src.agent import Agent
 from src.DQN_Network import DQN_Network
 
 
-# Device automatico
+# Device 
 if torch.cuda.is_available():
     device = torch.device("cuda")
 elif torch.backends.mps.is_available():
@@ -51,7 +51,6 @@ class DQNAgent(Agent):
         self.criterion = nn.SmoothL1Loss() 
 
     def get_action(self, state):
-        # Utilizza epsilon statico
         if random.random() < self.epsilon:
             return self.env.action_space.sample()
 
@@ -60,40 +59,40 @@ class DQNAgent(Agent):
             return self.policy_net(state_t).argmax().item()
 
     def update(self, obs, action, next_obs, reward, terminated, truncated, info):
-        # --- 1. REWARD SHAPING AVANZATO ---
+        # --- REWARD SHAPING ---
         adjusted_reward = reward
         
-        # Controlliamo se le informazioni necessarie sono presenti nel dizionario info
+        # Comprobemos si la información necesaria se encuentra en el diccionario info
         if not terminated and "bird" in info and "pipes" in info:
             bird_y = info["bird"]["y"]
             bird_x = info["bird"]["x"]
             pipes = info["pipes"]
             
-            # Trova il primo tubo davanti all'uccellino
+            # Encuentra el primer tubo que hay delante del pajarito
             upcoming_pipes = [p for p in pipes if p["x"] + 50 > bird_x]
             
             if upcoming_pipes:
                 next_pipe = upcoming_pipes[0]
-                target_y = next_pipe["bottom"] - 20 # Resta 20 pixel sopra il tubo di sotto
+                target_y = next_pipe["bottom"] - 20
                 
                 dist_v = abs(bird_y - target_y)
                 
-                # Premiamo la precisione rispetto a questo nuovo target
+                # Priorizamos la precisión en relación con este nuevo objetivo
                 shaping = max(0, 0.5 - (dist_v / 150.0))
                 adjusted_reward += shaping
                         
             #adjusted_reward += 0.1 # Bonus sopravvivenza frame
             
         elif terminated:
-            adjusted_reward = -100.0 # Penalità per collisione
+            adjusted_reward = -100.0 # Penalización por colisión
         
-        # --- GESTIONE MEMORIA ---
+        # --- GESTIÓN DE LA MEMORIA ---
         done = terminated or truncated
         self.memory.append((obs, action, adjusted_reward, next_obs, done))
         
         self.steps_done += 1
 
-        # --- 3. LOGICA DI TRAINING (Invariata ma con reward corretti) ---
+        # --- LÓGICA DE ENTRENAMIENTO ---
         if len(self.memory) < self.batch_size:
             return
 
@@ -106,24 +105,21 @@ class DQNAgent(Agent):
         next_states = torch.FloatTensor(np.array(next_states)).to(device)
         dones = torch.FloatTensor(dones).to(device)
 
-        # Calcolo Q-values attuali
+        # Cálculo de los valores Q actuales
         current_q = self.policy_net(states).gather(1, actions).squeeze()
 
-        # Calcolo Target Q-values (Double DQN logic o standard DQN)
+        # Cálculo de los valores Q objetivo 
         with torch.no_grad():
             max_next_q = self.target_net(next_states).max(1)[0]
             target_q = rewards + self.gamma * max_next_q * (1 - dones)
 
-        # Ottimizzazione
-        loss = self.criterion(current_q, target_q)
         
-        # ======== modifiche qua ========
+        loss = self.criterion(current_q, target_q)
         
         self.optimizer.zero_grad()
         loss.backward()
         
-        # Gradient Clipping
-        torch.nn.utils.clip_grad_norm_(self.policy_net.parameters(), 1.0) # Abbassato a 1.0 per più stabilità
+        torch.nn.utils.clip_grad_norm_(self.policy_net.parameters(), 1.0) 
         self.optimizer.step()
 
         self.training_history.append(loss.item())
